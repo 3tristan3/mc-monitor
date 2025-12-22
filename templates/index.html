@@ -322,6 +322,7 @@
                 resultArea.style.display = 'block';
                 document.getElementById('res-status').innerHTML = '<span class="text-success">在线</span>';
                 document.getElementById('res-version').innerText = data.version;
+                document.getElementById('res-version').title = data.version; 
                 document.getElementById('res-players').innerText = `${data.online_players} / ${data.max_players}`;
                 document.getElementById('res-motd').innerHTML = renderMotd(data.motd);
 
@@ -352,3 +353,4 @@
 
 </body>
 </html>
+
