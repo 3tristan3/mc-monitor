@@ -3,10 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的世界服务器检测</title>
-    <!-- 使用本地图标，通过 Flask 的 url_for 生成路径 -->
-    <link rel="icon" href="{{ url_for('static', filename='favicon.png') }}">
-    
+    <title>MC 服务器状态监控</title>
     <!-- 引入 Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- 引入图标库 -->
@@ -16,7 +13,6 @@
     
     <style>
         :root {
-            /* 定义你的专属紫色变量 */
             --primary-purple: #6f42c1;
             --primary-gradient: linear-gradient(135deg, #a4508b 0%, #5f2c82 100%);
             --glass-bg: rgba(255, 255, 255, 0.85);
@@ -24,29 +20,25 @@
         }
 
         body {
-            /* 背景图设置 */
             background: url("{{ url_for('static', filename='images/bg.jpg') }}") no-repeat center center fixed;
             background-size: cover;
-            /* 字体优化：中英文混排更舒服 */
             font-family: 'Nunito', 'PingFang SC', 'Microsoft YaHei', sans-serif;
             min-height: 100vh;
             display: flex;
-            align-items: center; /* 垂直居中 */
+            align-items: center;
             padding-top: 40px;
             padding-bottom: 40px;
         }
 
-        /* 背景遮罩 */
         body::before {
             content: '';
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(30, 10, 50, 0.3); /* 深紫色半透明遮罩 */
+            background: rgba(30, 10, 50, 0.3);
             z-index: -1;
             backdrop-filter: blur(3px);
         }
 
-        /* 核心卡片：毛玻璃效果 */
         .glass-card {
             background: var(--glass-bg);
             backdrop-filter: blur(20px);
@@ -59,7 +51,6 @@
             position: relative;
         }
 
-        /* 顶部装饰条 */
         .glass-card::after {
             content: '';
             position: absolute;
@@ -68,28 +59,14 @@
             background: var(--primary-gradient);
         }
 
-        h1.title {
-            color: #2d1b4e;
-            font-weight: 800;
-            letter-spacing: -1px;
-        }
+        h1.title { color: #2d1b4e; font-weight: 800; letter-spacing: -1px; }
+        p.subtitle { color: #6c757d; font-weight: 500; }
 
-        p.subtitle {
-            color: #6c757d;
-            font-weight: 500;
-        }
-
-        /* 紫色渐变按钮 */
         .btn-purple-gradient {
             background: var(--primary-gradient);
-            border: none;
-            color: white;
-            padding: 12px 35px;
-            border-radius: 50px;
-            font-weight: 700;
-            box-shadow: 0 4px 15px rgba(111, 66, 193, 0.4);
-            transition: all 0.3s ease;
-            white-space: nowrap; /* 防止按钮文字换行 */
+            border: none; color: white; padding: 12px 35px; border-radius: 50px;
+            font-weight: 700; box-shadow: 0 4px 15px rgba(111, 66, 193, 0.4);
+            transition: all 0.3s ease; white-space: nowrap;
         }
 
         .btn-purple-gradient:hover {
@@ -98,98 +75,70 @@
             color: white;
         }
 
-        /* 输入框美化 */
         .custom-input-group {
-            background: white;
-            padding: 8px;
-            border-radius: 50px;
+            background: white; padding: 8px; border-radius: 50px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.05);
             border: 1px solid rgba(111, 66, 193, 0.1);
-            display: flex;
-            align-items: center;
+            display: flex; align-items: center;
         }
 
-        .custom-input {
-            border: none;
-            box-shadow: none;
-            padding-left: 15px;
-            font-size: 1.05rem;
-            color: #495057;
-        }
+        .custom-input { border: none; box-shadow: none; padding-left: 15px; font-size: 1.05rem; color: #495057; }
+        .custom-input:focus { box-shadow: none; background: transparent; }
+        .input-icon { color: var(--primary-purple); padding-left: 15px; font-size: 1.2rem; }
 
-        .custom-input:focus {
-            box-shadow: none;
-            background: transparent;
-        }
-
-        .input-icon {
-            color: var(--primary-purple);
-            padding-left: 15px;
-            font-size: 1.2rem;
-        }
-
-        /* 结果展示区 */
-        #result-area {
-            margin-top: 40px;
-            display: none;
-            animation: slideDown 0.4s ease-out;
-        }
+        #result-area { margin-top: 40px; display: none; animation: slideDown 0.4s ease-out; }
 
         @keyframes slideDown {
             from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* 信息小卡片 */
         .stat-card {
-            background: rgba(255, 255, 255, 0.6);
-            border: 1px solid rgba(111, 66, 193, 0.1);
-            border-radius: 16px;
-            padding: 20px;
-            text-align: center;
-            transition: transform 0.2s;
-            height: 100%; /* 让卡片高度一致 */
+            background: rgba(255, 255, 255, 0.6); border: 1px solid rgba(111, 66, 193, 0.1);
+            border-radius: 16px; padding: 20px; text-align: center;
+            transition: transform 0.2s; height: 100%;
         }
 
         .stat-card:hover {
-            transform: translateY(-5px);
-            background: white;
+            transform: translateY(-5px); background: white;
             box-shadow: 0 10px 20px rgba(111, 66, 193, 0.1);
         }
 
-        .stat-icon {
-            font-size: 1.5rem;
-            color: var(--primary-purple);
-            margin-bottom: 10px;
-            opacity: 0.8;
-        }
+        .stat-icon { font-size: 1.5rem; color: var(--primary-purple); margin-bottom: 10px; opacity: 0.8; }
+        .stat-value { font-size: 1.25rem; font-weight: 800; color: #2d1b4e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .stat-label { font-size: 0.85rem; color: #888; letter-spacing: 1px; margin-top: 5px; }
 
-        .stat-value {
-            font-size: 1.25rem;
-            font-weight: 800;
-            color: #2d1b4e;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .stat-label {
-            font-size: 0.85rem;
-            color: #888;
-            letter-spacing: 1px;
-            margin-top: 5px;
-        }
-
-        /* MOTD 区域 */
         .motd-box {
-            background: #1e1e24;
-            color: #eee;
-            border-radius: 12px;
-            padding: 20px;
-            font-family: 'Consolas', 'Courier New', monospace;
-            margin-top: 20px;
-            border-left: 4px solid var(--primary-purple);
-            line-height: 1.5;
+            background: #1e1e24; color: #eee; border-radius: 12px; padding: 20px;
+            font-family: 'Consolas', 'Courier New', monospace; margin-top: 20px;
+            border-left: 4px solid var(--primary-purple); line-height: 1.5;
+            white-space: pre-wrap; /* 保证MOTD可以换行 */
+        }
+        
+        /* 【新增】玩家列表样式 */
+        .player-list-box {
+            background: rgba(255, 255, 255, 0.6); border: 1px solid rgba(111, 66, 193, 0.1);
+            border-radius: 16px; padding: 20px; margin-top: 20px;
+        }
+        .player-list-box .list-group-item {
+            background-color: transparent;
+            border-color: rgba(111, 66, 193, 0.15);
+            color: #2d1b4e;
+        }
+
+        /* 【新增】服务器类型切换按钮样式 */
+        .type-selector .btn-check:checked+.btn-outline-primary {
+            background: var(--primary-gradient);
+            border-color: var(--primary-purple);
+            color: white;
+        }
+        .type-selector .btn-outline-primary {
+            border-color: rgba(111, 66, 193, 0.4);
+            color: var(--primary-purple);
+            border-radius: 50px !important; /* 强制圆角 */
+        }
+        .type-selector .btn-outline-primary:hover {
+            background-color: rgba(111, 66, 193, 0.1);
         }
     </style>
 </head>
@@ -200,26 +149,32 @@
         <div class="col-lg-8 col-md-10">
             
             <div class="glass-card">
-                <!-- 头部区域 -->
                 <div class="text-center mb-5">
-                    <h1 class="title">我的世界服务器检测</h1>
-                    <p class="subtitle">输入服务器地址，实时查看在线人数</p>
+                    <h1 class="title">MC 服务器状态监控</h1>
+                    <p class="subtitle">输入服务器地址，实时查看在线人数与版本信息</p>
                 </div>
 
                 <!-- 输入区域 -->
-                <div class="custom-input-group mb-4">
-                    <i class="bi bi-controller input-icon"></i>
-                    <input type="text" id="server-ip" class="form-control custom-input" 
-                           placeholder="请输入服务器地址 (例如: play.hypixel.net)">
-                    <button class="btn btn-purple-gradient" onclick="queryServer()">
-                        立即查询
-                    </button>
+                <form id="query-form">
+                    <div class="custom-input-group mb-3">
+                        <i class="bi bi-controller input-icon"></i>
+                        <input type="text" id="server-ip" class="form-control custom-input" 
+                               placeholder="请输入服务器地址 (例如: play.hypixel.net)" required>
+                        <button class="btn btn-purple-gradient" type="submit">
+                            立即查询
+                        </button>
+                    </div>
+                </form>
+
+                <!-- 【新增】服务器类型切换 -->
+                <div class="btn-group w-100 type-selector mb-4" role="group">
+                    <input type="radio" class="btn-check" name="server-type" id="type-java" value="java" autocomplete="off" checked>
+                    <label class="btn btn-outline-primary mx-1" for="type-java"><i class="bi bi-cup-hot me-2"></i>Java 版</label>
+                
+                    <input type="radio" class="btn-check" name="server-type" id="type-bedrock" value="bedrock" autocomplete="off">
+                    <label class="btn btn-outline-primary mx-1" for="type-bedrock"><i class="bi bi-phone me-2"></i>基岩版</label>
                 </div>
                 
-                <div class="text-center">
-                    <small class="text-muted">支持 Java 版 • 版本检测 • 极速响应</small>
-                </div>
-
                 <!-- 加载动画 -->
                 <div id="loader" class="text-center py-4" style="display: none;">
                     <div class="spinner-border text-primary" role="status" style="color: var(--primary-purple) !important;"></div>
@@ -231,12 +186,12 @@
 
                 <!-- 结果展示 -->
                 <div id="result-area">
-                    <div class="row g-3 justify-content-center">
+                    <div class="row g-3">
                         <!-- 状态 -->
                         <div class="col-6 col-md-4">
                             <div class="stat-card">
                                 <div class="stat-icon"><i class="bi bi-activity"></i></div>
-                                <div class="stat-value text-success">运行中</div>
+                                <div id="res-status" class="stat-value">-</div>
                                 <div class="stat-label">服务器状态</div>
                             </div>
                         </div>
@@ -249,7 +204,7 @@
                             </div>
                         </div>
                         <!-- 人数 -->
-                        <div class="col-6 col-md-4">
+                        <div class="col-12 col-md-4">
                             <div class="stat-card">
                                 <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
                                 <div class="stat-value" id="res-players">-</div>
@@ -258,8 +213,14 @@
                         </div>
                     </div>
 
-                    <div class="motd-box mt-4">
-                        <div id="res-motd">正在获取欢迎信息...</div>
+                    <div class="motd-box mt-4" id="res-motd"></div>
+
+                    <!-- 【新增】玩家列表展示区 -->
+                    <div class="player-list-box mt-4" id="player-list-area" style="display: none;">
+                        <h5 class="mb-3" style="color: #2d1b4e; font-weight: 700;">
+                            <i class="bi bi-person-check-fill me-2"></i>在线玩家
+                        </h5>
+                        <div id="res-player-list"></div>
                     </div>
                     
                     <div class="text-center mt-4">
@@ -268,70 +229,125 @@
                 </div>
 
             </div>
-
         </div>
     </div>
 </div>
 
 <script>
-    // 去除 MC 颜色代码的函数
-    function stripColors(str) {
-        return str.replace(/\u00A7[0-9a-fk-or]/g, '');
+    // 【修改】替换旧的 stripColors 函数为新的 renderMotd
+    function renderMotd(motdString) {
+        if (!motdString) return '<span style="color: #888;">(服务器未提供欢迎信息)</span>';
+        
+        const colorMap = {
+            '0': '#000000', '1': '#0000AA', '2': '#00AA00', '3': '#00AAAA',
+            '4': '#AA0000', '5': '#AA00AA', '6': '#FFAA00', '7': '#AAAAAA',
+            '8': '#555555', '9': '#5555FF', 'a': '#55FF55', 'b': '#55FFFF',
+            'c': '#FF5555', 'd': '#FF55FF', 'e': '#FFFF55', 'f': '#FFFFFF'
+        };
+        const formatMap = {
+            'l': 'font-weight: bold;', 'm': 'text-decoration: line-through;',
+            'n': 'text-decoration: underline;', 'o': 'font-style: italic;',
+        };
+
+        let currentStyle = '';
+        let html = '';
+        const parts = motdString.split('§');
+
+        const firstPart = parts.shift().replace(/\n/g, '<br>');
+        html += `<span>${firstPart}</span>`;
+
+        parts.forEach(part => {
+            const code = part.charAt(0);
+            let text = part.substring(1);
+            
+            if (colorMap[code]) {
+                currentStyle = `color: ${colorMap[code]};`;
+            } else if (formatMap[code]) {
+                currentStyle += formatMap[code];
+            } else if (code === 'r' || code === '') {
+                currentStyle = '';
+            }
+            
+            if (text) {
+                html += `<span style="${currentStyle}">${text.replace(/\n/g, '<br>')}</span>`;
+            }
+        });
+
+        return html;
     }
 
     function resetForm() {
         document.getElementById('server-ip').value = '';
         document.getElementById('result-area').style.display = 'none';
         document.getElementById('error-msg').style.display = 'none';
+        document.getElementById('player-list-area').style.display = 'none';
     }
 
-    async function queryServer() {
-        const ip = document.getElementById('server-ip').value;
+    // 【修改】完全重构 queryServer 函数以支持新功能
+    async function queryServer(event) {
+        // 阻止表单默认提交行为
+        if(event) event.preventDefault();
+
+        const ip = document.getElementById('server-ip').value.trim();
+        const serverType = document.querySelector('input[name="server-type"]:checked').value;
         const resultArea = document.getElementById('result-area');
         const loader = document.getElementById('loader');
         const errorMsg = document.getElementById('error-msg');
+        const playerListArea = document.getElementById('player-list-area');
 
         if (!ip) {
             alert("请输入服务器地址！");
             return;
         }
 
-        // 重置状态
         resultArea.style.display = 'none';
         errorMsg.style.display = 'none';
+        playerListArea.style.display = 'none';
         loader.style.display = 'block';
 
         try {
-            const response = await fetch(`/query?ip=${ip}`);
+            const response = await fetch(`/query?ip=${encodeURIComponent(ip)}&type=${serverType}`);
             const data = await response.json();
 
             loader.style.display = 'none';
 
-            if (data.error) {
-                errorMsg.style.display = 'block';
-                // 这里做一些简单的错误汉化
-                let zhError = data.error;
-                if(data.error.includes("timed out")) zhError = "连接超时，请检查地址是否正确";
-                if(data.error.includes("get addr info")) zhError = "找不到该域名/IP地址";
-                
-                errorMsg.innerText = "查询失败: " + zhError;
+            if (!data.online || data.error) {
+                const errorMessage = data.error ? `查询失败: ${data.error}` : '服务器当前离线或地址不正确。';
+                document.getElementById('res-status').innerHTML = '<span class="text-danger">离线</span>';
+                document.getElementById('res-version').innerText = '-';
+                document.getElementById('res-players').innerText = '-';
+                document.getElementById('res-motd').innerHTML = `<span style="color: #888;">(${errorMessage})</span>`;
+                resultArea.style.display = 'block';
             } else {
                 resultArea.style.display = 'block';
+                document.getElementById('res-status').innerHTML = '<span class="text-success">在线</span>';
                 document.getElementById('res-version').innerText = data.version;
                 document.getElementById('res-players').innerText = `${data.online_players} / ${data.max_players}`;
-                document.getElementById('res-motd').innerText = stripColors(data.motd);
+                document.getElementById('res-motd').innerHTML = renderMotd(data.motd);
+
+                // 【新增】处理和显示玩家列表
+                const playerListEl = document.getElementById('res-player-list');
+                if (data.players_sample && data.players_sample.length > 0) {
+                    let playerHtml = '<ul class="list-group list-group-flush">';
+                    data.players_sample.forEach(player => {
+                        playerHtml += `<li class="list-group-item">${player.name}</li>`;
+                    });
+                    playerHtml += '</ul>';
+                    playerListEl.innerHTML = playerHtml;
+                    playerListArea.style.display = 'block'; // 显示玩家列表区域
+                } else {
+                    playerListArea.style.display = 'none'; // 如果没有玩家，则隐藏区域
+                }
             }
         } catch (e) {
             loader.style.display = 'none';
             errorMsg.style.display = 'block';
-            errorMsg.innerText = "无法连接到后端服务器";
+            errorMsg.innerText = `请求失败: ${e.message}。请检查网络或联系管理员。`;
         }
     }
     
-    // 回车键支持
-    document.getElementById('server-ip').addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') queryServer();
-    });
+    // 【修改】将事件监听器绑定到 form 的 submit 事件，而不是按钮的 click
+    document.getElementById('query-form').addEventListener('submit', queryServer);
 </script>
 
 </body>
