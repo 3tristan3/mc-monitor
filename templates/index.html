@@ -74,6 +74,12 @@
             box-shadow: 0 8px 20px rgba(111, 66, 193, 0.6);
             color: white;
         }
+        
+        /* 让下载按钮也应用渐变色 */
+        #download-btn {
+            padding: 0.375rem 1rem; /* 匹配sm按钮的大小 */
+            font-size: .875rem; /* 匹配sm按钮的大小 */
+        }
 
         .custom-input-group {
             background: white; padding: 8px; border-radius: 50px;
@@ -115,7 +121,6 @@
             white-space: pre-wrap; /* 保证MOTD可以换行 */
         }
         
-        /* 【新增】玩家列表样式 */
         .player-list-box {
             background: rgba(255, 255, 255, 0.6); border: 1px solid rgba(111, 66, 193, 0.1);
             border-radius: 16px; padding: 20px; margin-top: 20px;
@@ -126,7 +131,6 @@
             color: #2d1b4e;
         }
 
-        /* 【新增】服务器类型切换按钮样式 */
         .type-selector .btn-check:checked+.btn-outline-primary {
             background: var(--primary-gradient);
             border-color: var(--primary-purple);
@@ -166,7 +170,7 @@
                     </div>
                 </form>
 
-                <!-- 【新增】服务器类型切换 -->
+                <!-- 服务器类型切换 -->
                 <div class="btn-group w-100 type-selector mb-4" role="group">
                     <input type="radio" class="btn-check" name="server-type" id="type-java" value="java" autocomplete="off" checked>
                     <label class="btn btn-outline-primary mx-1" for="type-java"><i class="bi bi-cup-hot me-2"></i>Java 版</label>
@@ -215,7 +219,7 @@
 
                     <div class="motd-box mt-4" id="res-motd"></div>
 
-                    <!-- 【新增】玩家列表展示区 -->
+                    <!-- 玩家列表展示区 -->
                     <div class="player-list-box mt-4" id="player-list-area" style="display: none;">
                         <h5 class="mb-3" style="color: #2d1b4e; font-weight: 700;">
                             <i class="bi bi-person-check-fill me-2"></i>在线玩家
@@ -223,9 +227,15 @@
                         <div id="res-player-list"></div>
                     </div>
                     
+                    <!-- 【修改】按钮区域 -->
                     <div class="text-center mt-4">
                         <button class="btn btn-sm btn-outline-secondary rounded-pill px-4" onclick="resetForm()">清除结果</button>
+                        <!-- 【新增】下载图片按钮 -->
+                        <button id="download-btn" class="btn btn-sm btn-purple-gradient rounded-pill px-4" style="display: none;">
+                            <i class="bi bi-camera-fill me-1"></i> 下载为图片
+                        </button>
                     </div>
+
                 </div>
 
             </div>
@@ -234,7 +244,6 @@
 </div>
 
 <script>
-    // 【修改】替换旧的 stripColors 函数为新的 renderMotd
     function renderMotd(motdString) {
         if (!motdString) return '<span style="color: #888;">(服务器未提供欢迎信息)</span>';
         
@@ -276,16 +285,16 @@
         return html;
     }
 
+    // 【修改】添加隐藏下载按钮的逻辑
     function resetForm() {
         document.getElementById('server-ip').value = '';
         document.getElementById('result-area').style.display = 'none';
         document.getElementById('error-msg').style.display = 'none';
         document.getElementById('player-list-area').style.display = 'none';
+        document.getElementById('download-btn').style.display = 'none'; // 新增
     }
 
-    // 【修改】完全重构 queryServer 函数以支持新功能
     async function queryServer(event) {
-        // 阻止表单默认提交行为
         if(event) event.preventDefault();
 
         const ip = document.getElementById('server-ip').value.trim();
@@ -303,6 +312,7 @@
         resultArea.style.display = 'none';
         errorMsg.style.display = 'none';
         playerListArea.style.display = 'none';
+        document.getElementById('download-btn').style.display = 'none'; // 查询前先隐藏旧按钮
         loader.style.display = 'block';
 
         try {
@@ -320,13 +330,13 @@
                 resultArea.style.display = 'block';
             } else {
                 resultArea.style.display = 'block';
+                document.getElementById('download-btn').style.display = 'inline-block'; // 【修改】查询成功后显示下载按钮
                 document.getElementById('res-status').innerHTML = '<span class="text-success">在线</span>';
                 document.getElementById('res-version').innerText = data.version;
                 document.getElementById('res-version').title = data.version; 
                 document.getElementById('res-players').innerText = `${data.online_players} / ${data.max_players}`;
                 document.getElementById('res-motd').innerHTML = renderMotd(data.motd);
 
-                // 【新增】处理和显示玩家列表
                 const playerListEl = document.getElementById('res-player-list');
                 if (data.players_sample && data.players_sample.length > 0) {
                     let playerHtml = '<ul class="list-group list-group-flush">';
@@ -335,9 +345,9 @@
                     });
                     playerHtml += '</ul>';
                     playerListEl.innerHTML = playerHtml;
-                    playerListArea.style.display = 'block'; // 显示玩家列表区域
+                    playerListArea.style.display = 'block';
                 } else {
-                    playerListArea.style.display = 'none'; // 如果没有玩家，则隐藏区域
+                    playerListArea.style.display = 'none';
                 }
             }
         } catch (e) {
@@ -347,10 +357,71 @@
         }
     }
     
-    // 【修改】将事件监听器绑定到 form 的 submit 事件，而不是按钮的 click
     document.getElementById('query-form').addEventListener('submit', queryServer);
+
+
+    // 【全新功能】处理图片下载的完整逻辑
+    document.addEventListener('DOMContentLoaded', () => {
+        const downloadButton = document.getElementById('download-btn');
+    
+        downloadButton.addEventListener('click', async () => {
+    
+            // 1. 从页面上实时提取需要展示的数据
+            const serverIp = document.getElementById('server-ip').value;
+            const statusText = document.getElementById('res-status').innerText;
+            const versionText = document.getElementById('res-version').innerText;
+            const playersText = document.getElementById('res-players').innerText;
+            
+            const params = new URLSearchParams({
+                serverName: serverIp || "我的服务器",
+                status: statusText,
+                version: versionText,
+                players: playersText,
+            });
+    
+            // 2. 构建 API URL
+            const apiUrl = `/api/og?${params.toString()}`;
+    
+            try {
+                // 3. 更改按钮状态，提供用户反馈
+                downloadButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 生成中...';
+                downloadButton.disabled = true;
+    
+                // 4. 调用 API 获取图片
+                const response = await fetch(apiUrl);
+    
+                if (!response.ok) {
+                    throw new Error(`图片生成失败，状态码: ${response.status}`);
+                }
+    
+                // 5. 将响应体转换为 Blob (图片的二进制数据)
+                const imageBlob = await response.blob();
+    
+                // 6. 创建临时 URL 指向图片数据
+                const imageUrl = URL.createObjectURL(imageBlob);
+    
+                // 7. 创建隐藏的 <a> 标签来触发下载
+                const link = document.createElement('a');
+                link.href = imageUrl;
+                link.download = `${serverIp || 'server'}-status.png`; // 使用服务器IP作为文件名
+                document.body.appendChild(link);
+                link.click();
+    
+                // 8. 清理工作
+                document.body.removeChild(link);
+                URL.revokeObjectURL(imageUrl);
+    
+            } catch (error) {
+                console.error('下载图片时出错:', error);
+                alert('无法生成图片，请查看浏览器控制台 (F12) 获取更多信息。');
+            } finally {
+                // 9. 恢复按钮原始状态
+                downloadButton.innerHTML = '<i class="bi bi-camera-fill me-1"></i> 下载为图片';
+                downloadButton.disabled = false;
+            }
+        });
+    });
 </script>
 
 </body>
 </html>
-
