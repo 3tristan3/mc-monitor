@@ -21,12 +21,14 @@ export default async function handler(request) {
     const online = searchParams.get('online') || 'N/A';
     const max = searchParams.get('max') || 'N/A';
 
-    // 2. 异步加载字体 (可选，但能让你的图片更好看)
-    // 我们从 Google Fonts 加载一个开源字体
-    const fontData = await fetch(
-      'https://fonts.gstatic.com/s/notosanssc/v35/k3k_oo52o_wA2sOaxLM1PjM3-_0ncy_e8W-v.ttf',
-    ).then((res) => res.arrayBuffer());
-
+    // 2. 异步从本地 public 目录加载字体
+    const fontUrl = new URL(
+      '/fonts/NotoSansSC-Regular.ttf', // 确保这个文件名和你放入 public/fonts 的文件名完全一致！
+      process.env.VERCEL_URL 
+        ? 'https://' + process.env.VERCEL_URL 
+        : 'http://localhost:3000'
+    );
+    const fontData = await fetch(fontUrl).then((res) => res.arrayBuffer());
     // 3. 使用 ImageResponse 生成图片
     // 这里就像写 HTML 和 CSS 一样！我们用 Tailwind CSS 来快速设计样式。
     return new ImageResponse(
