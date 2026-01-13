@@ -451,23 +451,35 @@ const getInitial = (host) => host ? host.charAt(0).toUpperCase() : '?';
             <div class="rounded-[20px] p-5 mb-6 border border-transparent" style="background-color: var(--bg-input);">
               <div class="text-[14px] font-medium leading-relaxed text-center text-main" v-html="parsedMotd"></div>
             </div>
-
+            <!-- 数据网格 -->
             <div class="grid grid-cols-2 gap-4 mb-6">
-              <div class="p-4 rounded-[20px] text-center" style="background-color: var(--bg-input);">
+              <!-- 在线人数 (保持不变) -->
+              <div class="p-4 rounded-[20px] text-center flex flex-col justify-center" style="background-color: var(--bg-input);">
                 <div class="text-[11px] font-bold uppercase tracking-[0.05em] text-sub mb-1">在线人数</div>
-                <div class="text-2xl font-bold text-main tracking-tight">{{ displayOnline }}</div>
+                <div class="text-3xl font-bold text-main tracking-tight">{{ displayOnline }}</div>
               </div>
-              <div class="p-4 rounded-[20px] text-center relative overflow-hidden" style="background-color: var(--bg-input);">
+
+              <!-- 网络延迟 (新增注释) -->
+              <div class="p-4 rounded-[20px] text-center relative overflow-hidden flex flex-col justify-center" style="background-color: var(--bg-input);">
                 <div class="text-[11px] font-bold uppercase tracking-[0.05em] text-sub mb-1">网络延迟</div>
+                
                 <div class="flex items-center justify-center gap-2">
-                  <div class="text-2xl font-bold" :class="resultData.latency < 100 ? 'text-[#34C759]' : 'text-[#FF9F0A]'">{{ resultData.latency }}</div>
+                  <div class="text-3xl font-bold" :class="resultData.latency < 100 ? 'text-[#34C759]' : 'text-[#FF9F0A]'">{{ resultData.latency }}</div>
                   <span class="text-xs text-sub font-bold mt-2">ms</span>
+                  
+                  <!-- 声纳脉冲 -->
                   <div class="sonar-container mt-2" :class="resultData.latency < 100 ? 'text-[#34C759]' : 'text-[#FF9F0A]'">
                     <div class="sonar-dot"></div><div class="sonar-wave"></div><div class="sonar-wave"></div>
                   </div>
                 </div>
+
+                <!-- 新增：严谨的小字声明 -->
+                <p class="text-[9px] text-tertiary mt-2 leading-tight opacity-70 scale-95 origin-center">
+                  * 基于网页服务器位置<br>非本地延迟，仅供参考
+                </p>
               </div>
             </div>
+
 
             <!-- 历史趋势图 -->
             <div class="mb-6 pointer-events-auto">
