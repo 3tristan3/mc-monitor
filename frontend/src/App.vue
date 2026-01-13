@@ -11,6 +11,7 @@ const errorMessage = ref('');
 const theme = ref('system');
 const showThemeMenu = ref(false);
 const history = ref([]); 
+const favorites = ref([]); // 新增：收藏列表
 const displayOnline = ref(0); 
 const isInputFocused = ref(false); 
 
@@ -26,7 +27,7 @@ const mouseY = ref(0);
 const pixels = ref([]);
 let animationFrameId = null;
 
-// --- 3D 视差卡片逻辑 ---
+// --- 3D 视差卡片逻辑 (保留) ---
 const cardRef = ref(null);
 const handleCardMouseMove = (e) => {
   if (!cardRef.value) return;
@@ -137,7 +138,6 @@ const generateMockHistory = (current, max) => {
   const labels = [];
   const data = [];
   const now = new Date();
-  
   for (let i = 12; i >= 0; i--) {
     const d = new Date(now.getTime() - i * 60 * 60 * 1000);
     labels.push(d.getHours() + ':00');
@@ -152,36 +152,33 @@ const generateMockHistory = (current, max) => {
     if (value > max) value = max;
     data.push(value);
   }
-
-  // 严格遵循黑白主题
   const colorRGB = isDarkMode.value ? '255, 255, 255' : '0, 0, 0'; 
-  
   chartData.value = {
     labels,
     datasets: [{
       label: '在线人数',
       data,
-      borderColor: `rgba(${colorRGB}, 1)`, // 纯黑或纯白线条
+      borderColor: `rgba(${colorRGB}, 1)`,
       backgroundColor: (context) => {
         const ctx = context.chart.ctx;
         const gradient = ctx.createLinearGradient(0, 0, 0, 100);
-        // 渐变：从微透到完全透明，营造悬浮感
         gradient.addColorStop(0, `rgba(${colorRGB}, 0.15)`);
         gradient.addColorStop(1, `rgba(${colorRGB}, 0)`);
         return gradient;
       },
       fill: true,
-      borderWidth: 2, // 纤细优雅
+      borderWidth: 2,
       pointRadius: 0, 
       pointHoverRadius: 5,
       pointBackgroundColor: `rgba(${colorRGB}, 1)`,
-      pointBorderColor: isDarkMode.value ? '#000' : '#fff', // 点的描边与背景相反
+      pointBorderColor: isDarkMode.value ? '#000' : '#fff',
       pointBorderWidth: 2,
       tension: 0.5 
     }]
   };
 };
 
+// --- 查询逻辑 ---
 const queryServer = async (addressOverride = null) => {
   const targetAddress = addressOverride || serverAddress.value;
   if (!targetAddress.trim()) return;
@@ -216,6 +213,7 @@ const queryServer = async (addressOverride = null) => {
   }
 };
 
+// --- 历史记录 & 收藏逻辑 (Local Storage) ---
 const addToHistory = (addr) => {
   const newHistory = history.value.filter(h => h !== addr);
   newHistory.unshift(addr);
@@ -228,6 +226,30 @@ const removeHistory = (addr) => {
   localStorage.setItem('queryHistory', JSON.stringify(history.value));
 }
 
+// 新增：收藏逻辑
+const isFavorited = computed(() => {
+  if (!resultData.value) return false;
+  return favorites.value.includes(resultData.value.host);
+});
+
+const toggleFavorite = () => {
+  if (!resultData.value) return;
+  const host = resultData.value.host;
+  
+  if (favorites.value.includes(host)) {
+    favorites.value = favorites.value.filter(item => item !== host);
+  } else {
+    favorites.value.unshift(host);
+  }
+  localStorage.setItem('serverFavorites', JSON.stringify(favorites.value));
+};
+
+const removeFavorite = (addr) => {
+  favorites.value = favorites.value.filter(h => h !== addr);
+  localStorage.setItem('serverFavorites', JSON.stringify(favorites.value));
+};
+
+
 const applyTheme = () => {
   localStorage.setItem('theme', theme.value);
   let isDark = false;
@@ -236,7 +258,7 @@ const applyTheme = () => {
   } else {
     isDark = theme.value === 'dark';
   }
-  isDarkMode.value = isDark; // 同步状态给图表
+  isDarkMode.value = isDark; 
   if (isDark) document.documentElement.classList.add('dark');
   else document.documentElement.classList.remove('dark');
   
@@ -257,8 +279,14 @@ onMounted(() => {
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
     if (theme.value === 'system') applyTheme();
   });
+  
+  // 加载数据
   const savedHistory = localStorage.getItem('queryHistory');
   if (savedHistory) history.value = JSON.parse(savedHistory);
+  
+  const savedFavorites = localStorage.getItem('serverFavorites');
+  if (savedFavorites) favorites.value = JSON.parse(savedFavorites);
+  
   runDecryptEffect();
 });
 
@@ -278,7 +306,6 @@ const getInitial = (host) => host ? host.charAt(0).toUpperCase() : '?';
 </script>
 
 <template>
-  <!-- 背景动画 -->
   <div class="spotlight-overlay" :style="{ '--mouse-x': mouseX + 'px', '--mouse-y': mouseY + 'px' }"></div>
   <div class="pixel-canvas">
     <div v-for="p in pixels" :key="p.id" class="pixel" :style="{ transform: `translate(${p.x}px, ${p.y}px)`, width: p.size + 'px', height: p.size + 'px', opacity: p.opacity }"></div>
@@ -293,7 +320,7 @@ const getInitial = (host) => host ? host.charAt(0).toUpperCase() : '?';
           <span class="text-xl leading-none">{{ theme === 'light' ? '☀️' : theme === 'dark' ? '🌙' : '💻' }}</span>
         </button>
         <transition name="fade">
-          <div v-if="showThemeMenu" class="absolute top-full right-0 mt-3 w-40 holo-card p-2 flex flex-col origin-top-right z-50">
+          <div v-if="showThemeMenu" class="absolute top-full right-0 mt-3 w-40 app-card p-2 flex flex-col origin-top-right z-50">
             <button v-for="t in ['light', 'dark', 'system']" :key="t" @click="selectTheme(t)" class="text-left px-4 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-white/10 text-[14px] font-bold flex items-center gap-3 text-main transition-colors">
               <span>{{ t === 'light' ? '☀️' : t === 'dark' ? '🌙' : '💻' }}</span>
               {{ t === 'light' ? '浅色模式' : t === 'dark' ? '深色模式' : '跟随系统' }}
@@ -321,8 +348,33 @@ const getInitial = (host) => host ? host.charAt(0).toUpperCase() : '?';
             </div>
             <button type="submit" class="app-btn">开始查询</button>
           </form>
-          <div v-if="history.length > 0" class="mt-4">
-            <div class="flex items-center justify-between px-2 mb-3"><span class="text-[11px] font-bold text-sub uppercase tracking-widest">最近访问</span></div>
+
+          <!-- 新增：我的收藏 (优先显示) -->
+          <div v-if="favorites.length > 0" class="mt-4">
+            <div class="flex items-center justify-between px-2 mb-3">
+               <div class="flex items-center gap-2">
+                 <span class="text-[14px]">❤️</span>
+                 <span class="text-[11px] font-bold text-sub uppercase tracking-widest">我的收藏</span>
+               </div>
+            </div>
+            <div class="flex flex-wrap gap-2.5">
+              <TransitionGroup name="fade">
+                <div v-for="item in favorites" :key="item" class="fav-tag group" @click="queryServer(item)">
+                  <span>{{ item }}</span>
+                  <button @click.stop="removeFavorite(item)" class="text-tertiary hover:text-red-500 transition-colors w-4 h-4 flex items-center justify-center text-[16px] leading-none">×</button>
+                </div>
+              </TransitionGroup>
+            </div>
+          </div>
+
+          <!-- 历史记录 -->
+          <div v-if="history.length > 0" class="mt-2">
+            <div class="flex items-center justify-between px-2 mb-3">
+              <div class="flex items-center gap-2">
+                 <span class="text-[14px]">🕒</span>
+                 <span class="text-[11px] font-bold text-sub uppercase tracking-widest">最近访问</span>
+              </div>
+            </div>
             <div class="flex flex-wrap gap-2.5">
               <TransitionGroup name="fade">
                 <div v-for="item in history" :key="item" class="history-tag group" @click="queryServer(item)">
@@ -343,6 +395,19 @@ const getInitial = (host) => host ? host.charAt(0).toUpperCase() : '?';
           @mousemove="handleCardMouseMove"
           @mouseleave="resetCard"
         >
+          <!-- 收藏按钮 (右上角) -->
+          <div class="absolute top-6 right-6 z-20 pointer-events-auto">
+            <button 
+              class="fav-btn" 
+              :class="{ active: isFavorited }" 
+              @click="toggleFavorite"
+              title="收藏/取消收藏"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" :fill="isFavorited ? 'currentColor' : 'none'" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            </button>
+          </div>
           
           <div v-if="status === 'loading'" class="flex-1 flex flex-col items-center justify-center gap-10">
             <div class="cube-loader">
@@ -361,7 +426,7 @@ const getInitial = (host) => host ? host.charAt(0).toUpperCase() : '?';
                 <div class="absolute -bottom-1 -right-1 w-7 h-7 bg-[#34C759] border-[5px] rounded-full z-10" style="border-color: var(--bg-card);"></div>
               </div>
               <div>
-                <h2 class="text-3xl font-bold text-main truncate max-w-[320px] mb-1 tracking-tight">{{ resultData.host }}</h2>
+                <h2 class="text-3xl font-bold text-main truncate max-w-[280px] mb-1 tracking-tight">{{ resultData.host }}</h2>
                 <div class="inline-flex items-center px-3 py-1 rounded-full text-[12px] font-bold" style="background-color: var(--bg-input); color: var(--text-secondary);">版本 {{ resultData.version }}</div>
               </div>
             </div>
@@ -392,17 +457,11 @@ const getInitial = (host) => host ? host.charAt(0).toUpperCase() : '?';
                <div class="flex items-center justify-between mb-2 px-1">
                  <div class="text-[11px] font-bold uppercase tracking-[0.05em] text-sub">24H 活跃趋势</div>
                </div>
-               
-               <!-- 图表容器：极简边框 -->
-               <div class="rounded-[20px] px-2 pt-4 pb-2 border border-black/5 dark:border-white/5 relative overflow-hidden" style="background-color: var(--bg-input); height: 140px;">
+               <div class="rounded-[20px] p-2 border border-black/5 dark:border-white/5" style="background-color: var(--bg-input); height: 140px;">
                  <LineChart v-if="chartData" :chartData="chartData" :isDark="isDarkMode" />
                </div>
-               
-               <!-- 极简声明 (炫技不失严谨) -->
                <div class="text-center mt-2 opacity-60">
-                 <p class="text-[10px] text-tertiary tracking-wide font-medium">
-                   * 数据基于算法模拟，仅供趋势参考
-                 </p>
+                 <p class="text-[10px] text-tertiary tracking-wide font-medium">* 数据基于算法模拟，仅供趋势参考</p>
                </div>
             </div>
 
