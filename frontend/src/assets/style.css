@@ -1,0 +1,215 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================
+   1. 语义化色彩系统
+   ========================================= */
+:root {
+  /* 浅色模式 */
+  --bg-page: #F2F2F7;
+  --bg-card: #FFFFFF;
+  --bg-input: #F2F2F7;
+  --bg-input-focus: #E5E5EA;
+  
+  --text-primary: #000000;
+  --text-secondary: #6C6C70;
+  --text-tertiary: #AEAEB2;
+
+  --border-color: rgba(0, 0, 0, 0.05);
+  
+  --btn-primary-bg: #000000;
+  --btn-primary-text: #FFFFFF;
+  
+  --shadow-card: 0 12px 40px rgba(0, 0, 0, 0.08);
+
+  /* 方案一：聚光灯颜色 (浅色模式下是深色阴影) */
+  --spotlight-color: rgba(0, 0, 0, 0.04);
+  
+  /* 方案二：像素颜色 */
+  --pixel-color: #000000;
+}
+
+:root.dark {
+  /* 深色模式 */
+  --bg-page: #000000;
+  --bg-card: #1C1C1E;
+  --bg-input: #2C2C2E;
+  --bg-input-focus: #3A3A3C;
+  
+  --text-primary: #FFFFFF;
+  --text-secondary: #EBEBF5;
+  --text-tertiary: #98989D;
+
+  --border-color: rgba(255, 255, 255, 0.1);
+
+  --btn-primary-bg: #FFFFFF;
+  --btn-primary-text: #000000;
+  
+  --shadow-card: 0 12px 40px rgba(0, 0, 0, 0.5);
+
+  /* 方案一：聚光灯颜色 (深色模式下是亮光) */
+  --spotlight-color: rgba(255, 255, 255, 0.06);
+
+  /* 方案二：像素颜色 */
+  --pixel-color: #FFFFFF;
+}
+
+/* =========================================
+   2. 全局设置
+   ========================================= */
+body {
+  margin: 0;
+  overflow: hidden;
+  font-family: "SF Pro Display", "SF Pro Text", "PingFang SC", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  transition: background-color 0.4s ease, color 0.4s ease;
+  perspective: 1000px;
+}
+
+/* 方案一：聚光灯层 */
+.spotlight-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1; /* 在背景之上，内容之下 */
+  background: radial-gradient(
+    600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    var(--spotlight-color),
+    transparent 40%
+  );
+  opacity: 1;
+  transition: opacity 0.5s ease;
+}
+
+/* 方案二：磁力像素层 */
+.pixel-canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -2; /* 最底层 */
+}
+.pixel {
+  position: absolute;
+  background-color: var(--pixel-color);
+  border-radius: 4px; /* 微圆角 */
+  will-change: transform, opacity; /* 性能优化 */
+}
+
+/* =========================================
+   3. 组件样式 (保留之前的完美设计)
+   ========================================= */
+.holo-card {
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 28px;
+  box-shadow: var(--shadow-card);
+  transform-style: preserve-3d;
+  transform: rotateX(0) rotateY(0);
+  transition: transform 0.1s ease-out;
+  position: relative;
+  overflow: hidden;
+}
+
+.holo-card::after {
+  content: "";
+  position: absolute;
+  top: -50%; left: -50%; width: 200%; height: 200%;
+  background: linear-gradient(
+    135deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,0.05) 40%,
+    rgba(255,255,255,0.2) 50%,
+    rgba(255,255,255,0.05) 60%,
+    rgba(255,255,255,0) 100%
+  );
+  transform: rotate(30deg) translateY(var(--sheen-y, 100%));
+  pointer-events: none;
+  opacity: 0.8;
+  mix-blend-mode: overlay;
+  transition: transform 0.1s ease-out;
+}
+:root.dark .holo-card::after { opacity: 0.3; }
+
+/* 立方体加载器 */
+.cube-loader {
+  width: 48px; height: 48px; position: relative;
+  transform-style: preserve-3d; animation: cube-spin 2s infinite linear;
+}
+.cube-face {
+  position: absolute; width: 48px; height: 48px;
+  background: var(--text-primary); opacity: 0.1;
+  border: 2px solid var(--text-primary); box-sizing: border-box;
+}
+.cube-face:nth-child(1) { transform: rotateY(  0deg) translateZ(24px); }
+.cube-face:nth-child(2) { transform: rotateY( 90deg) translateZ(24px); }
+.cube-face:nth-child(3) { transform: rotateY(180deg) translateZ(24px); }
+.cube-face:nth-child(4) { transform: rotateY(-90deg) translateZ(24px); }
+.cube-face:nth-child(5) { transform: rotateX( 90deg) translateZ(24px); }
+.cube-face:nth-child(6) { transform: rotateX(-90deg) translateZ(24px); }
+.cube-core {
+  position: absolute; top: 12px; left: 12px; width: 24px; height: 24px;
+  background: var(--text-primary); transform-style: preserve-3d;
+  animation: core-beat 1.5s infinite ease-in-out alternate;
+}
+@keyframes cube-spin { 0% { transform: rotateX(0deg) rotateY(0deg); } 100% { transform: rotateX(360deg) rotateY(360deg); } }
+@keyframes core-beat { 0% { transform: scale3d(0.8, 0.8, 0.8); opacity: 0.5; } 100% { transform: scale3d(1.2, 1.2, 1.2); opacity: 1; } }
+
+/* 声纳脉冲 */
+.sonar-container { position: relative; width: 12px; height: 12px; display: flex; align-items: center; justify-content: center; }
+.sonar-dot { width: 8px; height: 8px; border-radius: 50%; background-color: currentColor; z-index: 2; }
+.sonar-wave { position: absolute; top: 0; left: 0; right: 0; bottom: 0; border-radius: 50%; border: 1px solid currentColor; opacity: 0; animation: sonar-ripple 2s infinite cubic-bezier(0, 0.2, 0.8, 1); }
+.sonar-wave:nth-child(2) { animation-delay: 0.6s; }
+@keyframes sonar-ripple { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(3); opacity: 0; } }
+
+/* 呼吸光感边框 */
+.glow-border-wrapper {
+  position: relative; border-radius: 20px; padding: 2px;
+  background: transparent; transition: all 0.5s ease; overflow: hidden;
+}
+.glow-border-wrapper.active {
+  background: linear-gradient(90deg, var(--bg-page), var(--text-secondary), var(--bg-page));
+  background-size: 200% 100%; animation: shimmer 2s infinite linear;
+}
+@keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+.glow-inner { background: var(--bg-page); border-radius: 18px; height: 100%; width: 100%; }
+
+/* 解码标题 */
+.decrypt-title { font-family: "SF Mono", "Menlo", monospace; cursor: default; }
+.decrypt-title:hover { color: var(--text-secondary); }
+
+/* 通用组件 */
+.text-main { color: var(--text-primary); }
+.text-sub { color: var(--text-secondary); }
+.app-input {
+  width: 100%; padding: 18px 24px; font-size: 17px; font-weight: 500;
+  border-radius: 18px; outline: none; border: 2px solid transparent; transition: all 0.3s ease;
+  background-color: var(--bg-input); color: var(--text-primary);
+}
+.app-input::placeholder { color: var(--text-tertiary); }
+.app-input:focus { background-color: var(--bg-input-focus); border-color: var(--btn-primary-bg); }
+.app-btn {
+  width: 100%; padding: 16px; font-size: 17px; font-weight: 700; border-radius: 18px;
+  transition: transform 0.2s ease, opacity 0.2s ease; display: flex; align-items: center; justify-content: center;
+  background-color: var(--btn-primary-bg); color: var(--btn-primary-text); box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.app-btn:active { transform: scale(0.96); opacity: 0.9; }
+.theme-toggle {
+  width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: transform 0.2s ease; background-color: var(--bg-card); color: var(--text-primary);
+  border: 1px solid var(--border-color); box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+.theme-toggle:hover { transform: scale(1.05); }
+.history-tag {
+  padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 100px;
+  cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s;
+  background-color: var(--bg-input); color: var(--text-primary);
+}
+.history-tag:hover { background-color: var(--bg-input-focus); transform: scale(1.02); }
+.image-pixelated { image-rendering: pixelated; }
+.fade-enter-active, .fade-leave-active { transition: opacity 0.4s ease, transform 0.4s ease; }
+.fade-enter-from { opacity: 0; transform: scale(0.95) translateY(15px); }
+.fade-leave-to { opacity: 0; transform: scale(0.95) translateY(-15px); }
