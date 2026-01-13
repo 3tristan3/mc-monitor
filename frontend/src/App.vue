@@ -226,24 +226,41 @@ const removeHistory = (addr) => {
   localStorage.setItem('queryHistory', JSON.stringify(history.value));
 }
 
-// 新增：收藏逻辑
+
+// 1. 辅助函数：获取当前结果的完整地址 (IP:Port)
+const getCurrentFullAddress = () => {
+  if (!resultData.value) return '';
+  let addr = resultData.value.host;
+  // 如果端口存在且不是默认的25565，就拼上去
+  if (resultData.value.port && resultData.value.port !== 25565) {
+    addr += `:${resultData.value.port}`;
+  }
+  return addr;
+};
+
+// 2. 判断是否已收藏
 const isFavorited = computed(() => {
-  if (!resultData.value) return false;
-  return favorites.value.includes(resultData.value.host);
+  const addr = getCurrentFullAddress();
+  if (!addr) return false;
+  return favorites.value.includes(addr);
 });
 
+// 3. 切换收藏状态
 const toggleFavorite = () => {
-  if (!resultData.value) return;
-  const host = resultData.value.host;
+  const addr = getCurrentFullAddress();
+  if (!addr) return;
   
-  if (favorites.value.includes(host)) {
-    favorites.value = favorites.value.filter(item => item !== host);
+  if (favorites.value.includes(addr)) {
+    // 如果已存在，则删除
+    favorites.value = favorites.value.filter(item => item !== addr);
   } else {
-    favorites.value.unshift(host);
+    // 如果不存在，则添加 (添加到最前)
+    favorites.value.unshift(addr);
   }
   localStorage.setItem('serverFavorites', JSON.stringify(favorites.value));
 };
 
+// 4. 删除指定收藏 (用于列表上的 X 按钮)
 const removeFavorite = (addr) => {
   favorites.value = favorites.value.filter(h => h !== addr);
   localStorage.setItem('serverFavorites', JSON.stringify(favorites.value));

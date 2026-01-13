@@ -276,3 +276,57 @@ html.dark .fav-btn.active {
   animation: heart-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   fill: currentColor; /* 实心 */
 }
+/* =========================================
+   升级：爱心按钮动效 (Heart Ripple)
+   ========================================= */
+.fav-btn {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  background-color: var(--bg-input); color: var(--text-tertiary);
+  cursor: pointer; position: relative; /* 关键：定位基准 */
+  overflow: visible; /* 允许波纹溢出 */
+}
+
+.fav-btn:hover { transform: scale(1.1); background-color: var(--bg-input-focus); }
+.fav-btn:active { transform: scale(0.9); }
+
+/* 激活状态 */
+.fav-btn.active {
+  color: #FF2D55;
+  background-color: rgba(255, 45, 85, 0.1);
+}
+html.dark .fav-btn.active { background-color: rgba(255, 45, 85, 0.2); }
+
+/* 核心：波纹动画层 */
+.fav-btn::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: 50%;
+  border: 2px solid #FF2D55;
+  opacity: 0;
+  transform: scale(1);
+  pointer-events: none;
+}
+
+/* 当 active 时触发动画 */
+.fav-btn.active::after {
+  animation: heart-ripple 0.6s cubic-bezier(0, 0.2, 0.8, 1);
+}
+
+@keyframes heart-ripple {
+  0% { transform: scale(1); opacity: 0.8; border-width: 4px; }
+  100% { transform: scale(2.5); opacity: 0; border-width: 0px; }
+}
+
+/* 爱心图标本身的跳动 */
+@keyframes heart-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.5); }
+  100% { transform: scale(1); }
+}
+.fav-btn.active svg {
+  animation: heart-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  fill: currentColor;
+}
